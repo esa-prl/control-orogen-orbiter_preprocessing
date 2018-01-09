@@ -60,8 +60,8 @@ void Task::transformCloud(void) {
 
 void Task::cropCloud(void) {
     const auto box = _box.get();
-    const Eigen::Vector4f minCutoffPoint(-box(0), -box(1), -box(2), 0.);
-    const Eigen::Vector4f maxCutoffPoint(box(0), box(1), box(2), 0.);
+    const Eigen::Vector4f minCutoffPoint(-box(0)/2, -box(1)/2, -box(2)/2, 0.);
+    const Eigen::Vector4f maxCutoffPoint(box(0)/2, box(1)/2, box(2)/2, 0.);
 
     pcl::CropBox<pcl::PointXYZ> cropBox;
     cropBox.setInputCloud(cloud_);
@@ -74,7 +74,7 @@ void Task::writeCloud(void) {
     BaseCloud baseCloud;
     baseCloud.points.clear();
     baseCloud.points.reserve(cloud_->size());
-    baseCloud.time.fromMicroseconds(cloud_->header.stamp);
+    baseCloud.time = base::Time::now();
 
     for (const auto& point : cloud_->points)
         baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
