@@ -26,46 +26,51 @@ void Task::updateHook(void) {
 }
 
 void Task::loadCloud(void) {
-    std::cout << "Reading ply..." << std::endl;
-
-    pcl::io::loadPLYFile<pcl::PointXYZ>(_plyFilename.rvalue(), *cloud_);
-    std::cout << "Size: " << cloud_->width << std::endl;
+    const auto filename = _plyFilename.value();
+    pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud_);
 }
 
 void Task::preprocessCloud(void) {
-    std::cout << "Downsampling cloud..." << std::endl;
+    downsampleCloud();
+    transformCloud();
+    cropCloud();
+}
+
+void Task::downsampleCloud(void) {
+    const auto voxelSize = _voxelSize.value();
+
     pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
     voxelGrid.setInputCloud(cloud_);
-    voxelGrid.setLeafSize(1., 1., 1.);
+    voxelGrid.setLeafSize(voxelSize, voxelSize, voxelSize);
     voxelGrid.filter(*cloud_);
-    std::cout << "Size: " << cloud_->width << std::endl;
+}
 
-    std::cout << "Transforming cloud..." << std::endl;
-    const auto translation = Eigen::Vector3d(0., 0., 0.);
-    const auto rotation = Eigen::Vector3d(0., 0., 0.);
+void Task::transformCloud(void) {
+    auto tf = Eigen::Affine3d::Identity();
+    const auto rotation = _rotation.get();
     const auto quaternion = Eigen::Quaterniond(
             Eigen::AngleAxisd(rotation(2), Eigen::Vector3d::UnitZ()) *
             Eigen::AngleAxisd(rotation(1), Eigen::Vector3d::UnitY()) *
             Eigen::AngleAxisd(rotation(0), Eigen::Vector3d::UnitX()));
-    auto tf = Eigen::Affine3d::Identity();
-    tf.translation() = translation;
+
+    tf.translation() = _translation.get();
     tf.linear() = quaternion.toRotationMatrix();
     pcl::transformPointCloud(*cloud_, *cloud_, tf);
+}
 
-    std::cout << "Cropping cloud..." << std::endl;
-    Eigen::Vector4f minCutoffPoint(-100., -100., -1000., 0.);
-    Eigen::Vector4f maxCutoffPoint(100., 100., 1000., 0.);
+void Task::cropCloud(void) {
+    const auto box = _box.get();
+    const Eigen::Vector4f minCutoffPoint(-box(0), -box(1), -box(2), 0.);
+    const Eigen::Vector4f maxCutoffPoint(box(0), box(1), box(2), 0.);
+
     pcl::CropBox<pcl::PointXYZ> cropBox;
     cropBox.setInputCloud(cloud_);
     cropBox.setMin(minCutoffPoint);
     cropBox.setMax(maxCutoffPoint);
     cropBox.filter(*cloud_);
-    std::cout << "Size: " << cloud_->width << std::endl;
 }
 
 void Task::writeCloud(void) {
-    std::cout << "Converting to base cloud..." << std::endl;
-
     BaseCloud baseCloud;
     baseCloud.points.clear();
     baseCloud.points.reserve(cloud_->size());
@@ -74,9 +79,7 @@ void Task::writeCloud(void) {
     for (const auto& point : cloud_->points)
         baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
 
-    std::cout << "Writing to port..." << std::endl;
     _pointCloud.write(baseCloud);
-    std::cout << "Done!" << std::endl;
 }
 
 }  // namespace pcl_io_preprocessing

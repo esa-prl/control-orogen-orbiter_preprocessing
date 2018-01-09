@@ -19,6 +19,9 @@ class Task : public TaskBase {
 
     void loadCloud(void);
     void preprocessCloud(void);
+    void downsampleCloud(void);
+    void transformCloud(void);
+    void cropCloud(void);
     void writeCloud(void);
 
   protected:
