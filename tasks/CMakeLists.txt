@@ -1,12 +1,9 @@
-# Generated from orogen/lib/orogen/templates/tasks/CMakeLists.txt
-
 include(pcl_io_preprocessingTaskLib)
-ADD_LIBRARY(${PCL_IO_PREPROCESSING_TASKLIB_NAME} SHARED 
+
+ADD_LIBRARY(${PCL_IO_PREPROCESSING_TASKLIB_NAME} SHARED
     ${PCL_IO_PREPROCESSING_TASKLIB_SOURCES})
 add_dependencies(${PCL_IO_PREPROCESSING_TASKLIB_NAME}
     regen-typekit)
-
-
 
 TARGET_LINK_LIBRARIES(${PCL_IO_PREPROCESSING_TASKLIB_NAME}
     ${OrocosRTT_LIBRARIES}
