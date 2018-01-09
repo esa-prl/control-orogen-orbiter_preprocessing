@@ -24,6 +24,12 @@ task_context 'Task' do
     property('box', '/base/Vector3d').
         doc 'Size of the crop box to be applied'
 
+    property('sorMeanK', 'int', 50).
+        doc 'Number of neighbors to analyze for each point in SOR filter'
+
+    property('sorStdMultiplier', 'double', 1.0).
+        doc 'Standard deviation multiplier for marking outliers in SOR filter'
+
     output_port('pointCloud', '/base/samples/Pointcloud').
         doc 'Point cloud that was loaded and preprocessed'
 

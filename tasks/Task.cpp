@@ -4,6 +4,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 namespace pcl_io_preprocessing {
 
@@ -34,6 +35,7 @@ void Task::preprocessCloud(void) {
     downsampleCloud();
     transformCloud();
     cropCloud();
+    smoothCloud();
 }
 
 void Task::downsampleCloud(void) {
@@ -68,6 +70,14 @@ void Task::cropCloud(void) {
     cropBox.setMin(minCutoffPoint);
     cropBox.setMax(maxCutoffPoint);
     cropBox.filter(*cloud_);
+}
+
+void Task::smoothCloud(void) {
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud_);
+    sor.setMeanK(_sorMeanK.rvalue());
+    sor.setStddevMulThresh(_sorStdMultiplier.rvalue());
+    sor.filter(*cloud_);
 }
 
 void Task::writeCloud(void) {

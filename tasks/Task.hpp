@@ -22,6 +22,7 @@ class Task : public TaskBase {
     void downsampleCloud(void);
     void transformCloud(void);
     void cropCloud(void);
+    void smoothCloud(void);
     void writeCloud(void);
 
   protected:
