@@ -2,7 +2,12 @@
 
 #include "pcl_io_preprocessing/TaskBase.hpp"
 
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+
 namespace pcl_io_preprocessing {
+
+using Cloud = pcl::PointCloud<pcl::PointXYZ>;
 
 class Task : public TaskBase {
   public:
