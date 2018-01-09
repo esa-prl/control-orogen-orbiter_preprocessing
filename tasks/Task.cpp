@@ -18,14 +18,11 @@ void Task::updateHook(void) {
     if (loaded) return;
     loaded = true;
 
-    // BaseCloud baseCloud;
+    BaseCloud baseCloud;
     Cloud::Ptr cloud(new Cloud);
 
     std::cout << "Reading ply..." << std::endl;
-    // pcl::io::loadPLYFile<pcl::PointXYZ>(
-        // "~/rock_bags/ebee/simplified_mesh.ply", *cloud);
-    pcl::io::loadPLYFile<pcl::PointXYZ>(
-        "~/rock_bags/ebee/densified_cloud.ply", *cloud);
+    pcl::io::loadPLYFile<pcl::PointXYZ>(_plyFilename.rvalue(), *cloud);
     std::cout << "Cloud size: " << cloud->width << std::endl;
 
     std::cout << "Downsampling cloud..." << std::endl;
@@ -35,12 +32,18 @@ void Task::updateHook(void) {
     voxelGrid.filter(*cloud);
     std::cout << "New size: " << cloud->width << std::endl;
 
-    // std::cout << "Converting to base cloud..." << std::endl;
-    // GaSlamBaseConverter::convertPCLToBaseCloud(baseCloud, cloud);
+    std::cout << "Converting to base cloud..." << std::endl;
+    baseCloud.points.clear();
+    baseCloud.points.reserve(cloud->size());
+    baseCloud.time.fromMicroseconds(cloud->header.stamp);
 
-    // std::cout << "Writing to port..." << std::endl;
-    // _mapCloud.write(baseCloud);
+    for (const auto& point : cloud->points)
+        baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
 
+    std::cout << "Finished configuring!" << std::endl;
+
+    std::cout << "Writing to port..." << std::endl;
+    _pointCloud.write(baseCloud);
     std::cout << "Done!" << std::endl;
 }
 

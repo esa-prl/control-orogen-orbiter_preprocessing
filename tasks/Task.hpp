@@ -8,6 +8,7 @@
 namespace pcl_io_preprocessing {
 
 using Cloud = pcl::PointCloud<pcl::PointXYZ>;
+using BaseCloud = base::samples::Pointcloud;
 
 class Task : public TaskBase {
   public:

@@ -9,6 +9,12 @@ import_types_from 'base'
 task_context 'Task' do
     needs_configuration
 
-    periodic 10
+    property('plyFilename', '/std/string').
+        doc 'Path to filename of the ply containing a point cloud'
+
+    output_port('pointCloud', '/base/samples/Pointcloud').
+        doc 'Point cloud that was loaded and preprocessed'
+
+    periodic 1
 end
 
