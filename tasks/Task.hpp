@@ -12,13 +12,19 @@ using BaseCloud = base::samples::Pointcloud;
 
 class Task : public TaskBase {
   public:
-    explicit Task(std::string const& name = "pcl_io_preprocessing::Task")
-            : TaskBase(name) {}
+    explicit Task(std::string const& name = "pcl_io_preprocessing::Task");
 
   protected:
-    bool configureHook(void) override;
-
     void updateHook(void) override;
+
+    void loadCloud(void);
+    void preprocessCloud(void);
+    void writeCloud(void);
+
+  protected:
+    bool initialized_;
+
+    Cloud::Ptr cloud_;
 };
 
 }  // namespace pcl_io_preprocessing

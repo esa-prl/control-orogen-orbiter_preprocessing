@@ -5,42 +5,51 @@
 
 namespace pcl_io_preprocessing {
 
-bool Task::configureHook(void) {
-    if (!TaskBase::configureHook()) return false;
-
-    return true;
+Task::Task(std::string const& name)
+        : TaskBase(name),
+          initialized_(false) {
+    cloud_.reset(new Cloud);
 }
 
 void Task::updateHook(void) {
     TaskBase::updateHook();
 
-    static bool loaded = false;
-    if (loaded) return;
-    loaded = true;
+    if (initialized_) return;
+
+    loadCloud();
+    preprocessCloud();
+    writeCloud();
+
+    initialized_ = true;
+}
+
+void Task::loadCloud(void) {
+    std::cout << "Reading ply..." << std::endl;
+
+    pcl::io::loadPLYFile<pcl::PointXYZ>(_plyFilename.rvalue(), *cloud_);
+    std::cout << "Cloud size: " << cloud_->width << std::endl;
+}
+
+void Task::preprocessCloud(void) {
+    std::cout << "Downsampling cloud..." << std::endl;
+
+    pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
+    voxelGrid.setInputCloud(cloud_);
+    voxelGrid.setLeafSize(1., 1., 1.);
+    voxelGrid.filter(*cloud_);
+    std::cout << "New size: " << cloud_->width << std::endl;
+}
+
+void Task::writeCloud(void) {
+    std::cout << "Converting to base cloud..." << std::endl;
 
     BaseCloud baseCloud;
-    Cloud::Ptr cloud(new Cloud);
-
-    std::cout << "Reading ply..." << std::endl;
-    pcl::io::loadPLYFile<pcl::PointXYZ>(_plyFilename.rvalue(), *cloud);
-    std::cout << "Cloud size: " << cloud->width << std::endl;
-
-    std::cout << "Downsampling cloud..." << std::endl;
-    pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
-    voxelGrid.setInputCloud(cloud);
-    voxelGrid.setLeafSize(1., 1., 1.);
-    voxelGrid.filter(*cloud);
-    std::cout << "New size: " << cloud->width << std::endl;
-
-    std::cout << "Converting to base cloud..." << std::endl;
     baseCloud.points.clear();
-    baseCloud.points.reserve(cloud->size());
-    baseCloud.time.fromMicroseconds(cloud->header.stamp);
+    baseCloud.points.reserve(cloud_->size());
+    baseCloud.time.fromMicroseconds(cloud_->header.stamp);
 
-    for (const auto& point : cloud->points)
+    for (const auto& point : cloud_->points)
         baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
-
-    std::cout << "Finished configuring!" << std::endl;
 
     std::cout << "Writing to port..." << std::endl;
     _pointCloud.write(baseCloud);
