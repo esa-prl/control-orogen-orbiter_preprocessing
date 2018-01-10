@@ -6,7 +6,7 @@
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
-namespace pcl_io_preprocessing {
+namespace cloud_preprocessing {
 
 Task::Task(std::string const& name)
         : TaskBase(name),
@@ -92,5 +92,5 @@ void Task::writeCloud(void) {
     _pointCloud.write(baseCloud);
 }
 
-}  // namespace pcl_io_preprocessing
+}  // namespace cloud_preprocessing
 
