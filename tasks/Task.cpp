@@ -22,19 +22,18 @@ void Task::updateHook(void) {
 
     if (initialized_) return;
 
-    initialized_ = true;
+    loadCloud();
 
-    if (!loadCloud()) {
-        std::cout << "Failed to load cloud. Unkown file format" << std::endl;
-        return;
-    }
-
-    if (!_preprocessingEnabled.rvalue()) preprocessCloud();
+    if (_preprocessingEnabled.rvalue()) preprocessCloud();
 
     writeCloud();
+
+    if (_savePreprocessedCloud.rvalue()) saveCloud();
+
+    initialized_ = true;
 }
 
-bool Task::loadCloud(void) {
+void Task::loadCloud(void) {
     const auto filename = _loadFilename.rvalue();
     const auto extension = filename.substr(filename.find_last_of(".") + 1);
 
@@ -43,9 +42,19 @@ bool Task::loadCloud(void) {
     else if (extension == "ply")
         pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud_);
     else
-        return false;
+        throw std::runtime_error("Failed to load cloud. Unkown file format");
+}
 
-    return true;
+void Task::saveCloud(void) {
+    const auto filename = _saveFilename.rvalue();
+    const auto extension = filename.substr(filename.find_last_of(".") + 1);
+
+    if (extension == "pcd")
+        pcl::io::savePCDFile<pcl::PointXYZ>(filename, *cloud_, true);
+    else if (extension == "ply")
+        pcl::io::savePLYFile<pcl::PointXYZ>(filename, *cloud_, true);
+    else
+        std::cout << "Failed to save cloud. Unkown file format" << std::endl;
 }
 
 void Task::preprocessCloud(void) {

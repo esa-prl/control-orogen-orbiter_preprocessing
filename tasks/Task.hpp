@@ -17,7 +17,9 @@ class Task : public TaskBase {
   protected:
     void updateHook(void) override;
 
-    bool loadCloud(void);
+    void loadCloud(void);
+
+    void saveCloud(void);
 
     void preprocessCloud(void);
 

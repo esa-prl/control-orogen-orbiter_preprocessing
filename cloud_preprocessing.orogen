@@ -9,11 +9,18 @@ import_types_from 'base'
 task_context 'Task' do
     needs_configuration
 
+    ####### Properties #######
     property('loadFilename', '/std/string').
         doc 'Path to filename (PCD or PLY) of the stored point cloud'
 
     property('preprocessingEnabled', 'bool', true).
-        doc 'Whether to preprocess the loaded cloud or not before outputting it'
+        doc 'Preprocess the loaded cloud before outputting it'
+
+    property('savePreprocessedCloud', 'bool', false).
+        doc 'Save the preprocessed cloud in a file'
+
+    property('saveFilename', '/std/string').
+        doc 'Path to filename (PCD or PLY) of the point cloud to be stored'
 
     property('voxelSize', 'double', 1.0).
         doc 'Voxel dimension of the voxel grid to be applied'
@@ -33,6 +40,7 @@ task_context 'Task' do
     property('sorStdMultiplier', 'double', 1.0).
         doc 'Standard deviation multiplier for marking outliers in SOR filter'
 
+    ####### Output Ports #######
     output_port('pointCloud', '/base/samples/Pointcloud').
         doc 'Point cloud that was loaded and preprocessed'
 
