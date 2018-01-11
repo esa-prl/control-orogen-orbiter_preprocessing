@@ -1,10 +1,13 @@
 #include "Task.hpp"
 
+#include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+
+#include <string>
 
 namespace cloud_preprocessing {
 
@@ -19,16 +22,30 @@ void Task::updateHook(void) {
 
     if (initialized_) return;
 
-    loadCloud();
-    preprocessCloud();
-    writeCloud();
-
     initialized_ = true;
+
+    if (!loadCloud()) {
+        std::cout << "Failed to load cloud. Unkown file format" << std::endl;
+        return;
+    }
+
+    if (!_preprocessingEnabled.rvalue()) preprocessCloud();
+
+    writeCloud();
 }
 
-void Task::loadCloud(void) {
-    const auto filename = _plyFilename.value();
-    pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud_);
+bool Task::loadCloud(void) {
+    const auto filename = _loadFilename.rvalue();
+    const auto extension = filename.substr(filename.find_last_of(".") + 1);
+
+    if (extension == "pcd")
+        pcl::io::loadPCDFile<pcl::PointXYZ>(filename, *cloud_);
+    else if (extension == "ply")
+        pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud_);
+    else
+        return false;
+
+    return true;
 }
 
 void Task::preprocessCloud(void) {

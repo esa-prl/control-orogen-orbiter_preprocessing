@@ -17,12 +17,18 @@ class Task : public TaskBase {
   protected:
     void updateHook(void) override;
 
-    void loadCloud(void);
+    bool loadCloud(void);
+
     void preprocessCloud(void);
+
     void downsampleCloud(void);
+
     void transformCloud(void);
+
     void cropCloud(void);
+
     void smoothCloud(void);
+
     void writeCloud(void);
 
   protected:

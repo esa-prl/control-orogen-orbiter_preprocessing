@@ -9,8 +9,11 @@ import_types_from 'base'
 task_context 'Task' do
     needs_configuration
 
-    property('plyFilename', '/std/string').
-        doc 'Path to filename of the ply containing a point cloud'
+    property('loadFilename', '/std/string').
+        doc 'Path to filename (PCD or PLY) of the stored point cloud'
+
+    property('preprocessingEnabled', 'bool', true).
+        doc 'Whether to preprocess the loaded cloud or not before outputting it'
 
     property('voxelSize', 'double', 1.0).
         doc 'Voxel dimension of the voxel grid to be applied'
