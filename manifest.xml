@@ -2,11 +2,13 @@
   <description brief="Component for loading and preprocessing stored point clouds">
   </description>
   <author>Dimitris Geromichalos/geromigd@gmail.com</author>
-  <license></license>
+
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="base/orogen/types" />
   <depend package="slam/pcl" />
   <depend package="slam/orogen/pcl" />
+
+  <tags>needs_opt</tags>
 </package>
 
