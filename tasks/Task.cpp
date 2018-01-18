@@ -58,14 +58,38 @@ void Task::saveCloud(void) {
 }
 
 void Task::preprocessCloud(void) {
+    cropCloud();
     downsampleCloud();
     transformCloud();
-    cropCloud();
     smoothCloud();
 }
 
+void Task::cropCloud(void) {
+    using Vector = Eigen::Vector3d;
+
+    const Vector box = _box.get();
+    const Vector rotation = _rotation.get();
+    const auto quaternion = Eigen::Quaterniond(
+            Eigen::AngleAxisd(rotation(2), Vector::UnitZ()) *
+            Eigen::AngleAxisd(rotation(1), Vector::UnitY()) *
+            Eigen::AngleAxisd(rotation(0), Vector::UnitX()));
+    const Vector translation = _translation.get();
+    const Vector center = quaternion.toRotationMatrix() * translation;
+
+    const Eigen::Vector4f minCutoffPoint(
+            center(0) - box(0) / 2., center(1) - box(1) / 2., -box(2) / 2., 0.);
+    const Eigen::Vector4f maxCutoffPoint(
+            center(0) + box(0) / 2., center(1) + box(1) / 2., box(2) / 2., 0.);
+
+    pcl::CropBox<pcl::PointXYZ> cropBox;
+    cropBox.setInputCloud(cloud_);
+    cropBox.setMin(minCutoffPoint);
+    cropBox.setMax(maxCutoffPoint);
+    cropBox.filter(*cloud_);
+}
+
 void Task::downsampleCloud(void) {
-    const auto voxelSize = _voxelSize.value();
+    const double voxelSize = _voxelSize.value();
 
     pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
     voxelGrid.setInputCloud(cloud_);
@@ -75,7 +99,7 @@ void Task::downsampleCloud(void) {
 
 void Task::transformCloud(void) {
     auto tf = Eigen::Affine3d::Identity();
-    const auto rotation = _rotation.get();
+    const Eigen::Vector3d rotation = _rotation.get();
     const auto quaternion = Eigen::Quaterniond(
             Eigen::AngleAxisd(rotation(2), Eigen::Vector3d::UnitZ()) *
             Eigen::AngleAxisd(rotation(1), Eigen::Vector3d::UnitY()) *
@@ -84,18 +108,6 @@ void Task::transformCloud(void) {
     tf.translation() = _translation.get();
     tf.linear() = quaternion.toRotationMatrix();
     pcl::transformPointCloud(*cloud_, *cloud_, tf);
-}
-
-void Task::cropCloud(void) {
-    const auto box = _box.get();
-    const Eigen::Vector4f minCutoffPoint(-box(0)/2, -box(1)/2, -box(2)/2, 0.);
-    const Eigen::Vector4f maxCutoffPoint(box(0)/2, box(1)/2, box(2)/2, 0.);
-
-    pcl::CropBox<pcl::PointXYZ> cropBox;
-    cropBox.setInputCloud(cloud_);
-    cropBox.setMin(minCutoffPoint);
-    cropBox.setMax(maxCutoffPoint);
-    cropBox.filter(*cloud_);
 }
 
 void Task::smoothCloud(void) {

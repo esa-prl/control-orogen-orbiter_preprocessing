@@ -23,11 +23,11 @@ class Task : public TaskBase {
 
     void preprocessCloud(void);
 
+    void cropCloud(void);
+
     void downsampleCloud(void);
 
     void transformCloud(void);
-
-    void cropCloud(void);
 
     void smoothCloud(void);
 
