@@ -15,11 +15,17 @@ class Task : public TaskBase {
     explicit Task(std::string const& name = "cloud_preprocessing::Task");
 
   protected:
+    bool configureHook(void) override;
+
     void updateHook(void) override;
+
+    bool startHook(void) override;
 
     void loadCloud(void);
 
     void saveCloud(void);
+
+    bool isReadyToPreprocess(void);
 
     void preprocessCloud(void);
 
@@ -36,7 +42,13 @@ class Task : public TaskBase {
   protected:
     bool initialized_;
 
+    base::samples::RigidBodyState robotPose_;
+
     Cloud::Ptr cloud_;
+
+    double eastingReference_;
+    double northingReference_;
+    double elevationReference_;
 };
 
 }  // namespace cloud_preprocessing

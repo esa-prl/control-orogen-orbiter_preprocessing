@@ -8,6 +8,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 
 #include <string>
+#include <cmath>
 
 namespace cloud_preprocessing {
 
@@ -17,20 +18,37 @@ Task::Task(std::string const& name)
     cloud_.reset(new Cloud);
 }
 
+bool Task::configureHook(void) {
+    if (!TaskBase::configureHook()) return false;
+
+    eastingReference_ = _robotEastingOffset.value() -
+        _cloudEastingOffset.value();
+    northingReference_ = _robotNorthingOffset.value() -
+        _cloudNorthingOffset.value();
+    elevationReference_ = _robotElevationOffset.value() -
+        _cloudElevationOffset.value();
+
+    return true;
+}
+
+bool Task::startHook(void) {
+    if (!TaskBase::startHook()) return false;
+
+    loadCloud();
+
+    return true;
+}
+
 void Task::updateHook(void) {
     TaskBase::updateHook();
 
-    if (initialized_) return;
-
-    loadCloud();
+    if (_robotPose.read(robotPose_) != RTT::NewData || !isReadyToPreprocess())
+        return;
 
     if (_preprocessingEnabled.rvalue()) preprocessCloud();
 
     writeCloud();
-
     if (_savePreprocessedCloud.rvalue()) saveCloud();
-
-    initialized_ = true;
 }
 
 void Task::loadCloud(void) {
@@ -57,29 +75,40 @@ void Task::saveCloud(void) {
         std::cout << "Failed to save cloud. Unkown file format" << std::endl;
 }
 
+bool Task::isReadyToPreprocess(void) {
+    if (initialized_) return false;
+
+    initialized_ = true;
+    return true;
+}
+
 void Task::preprocessCloud(void) {
     cropCloud();
     downsampleCloud();
     transformCloud();
-    smoothCloud();
+
+    if (_smoothCloud.rvalue()) smoothCloud();
 }
 
 void Task::cropCloud(void) {
     using Vector = Eigen::Vector3d;
 
-    const Vector box = _box.get();
-    const Vector rotation = _rotation.get();
     const auto quaternion = Eigen::Quaterniond(
-            Eigen::AngleAxisd(rotation(2), Vector::UnitZ()) *
-            Eigen::AngleAxisd(rotation(1), Vector::UnitY()) *
-            Eigen::AngleAxisd(rotation(0), Vector::UnitX()));
-    const Vector translation = _translation.get();
+            Eigen::AngleAxisd(_cloudYawOffset.rvalue(), Vector::UnitZ()) *
+            Eigen::AngleAxisd(0., Vector::UnitY()) *
+            Eigen::AngleAxisd(0., Vector::UnitX()));
+    const Vector translation(- northingReference_ - robotPose_.position.y(),
+            eastingReference_ + robotPose_.position.x(), 0.);
     const Vector center = quaternion.toRotationMatrix() * translation;
 
     const Eigen::Vector4f minCutoffPoint(
-            center(0) - box(0) / 2., center(1) - box(1) / 2., -box(2) / 2., 0.);
+            center(0) - _cropSize.rvalue() / 2.,
+            center(1) - _cropSize.rvalue() / 2.,
+            -std::numeric_limits<double>::max(), 0.);
     const Eigen::Vector4f maxCutoffPoint(
-            center(0) + box(0) / 2., center(1) + box(1) / 2., box(2) / 2., 0.);
+            center(0) + _cropSize.rvalue() / 2.,
+            center(1) + _cropSize.rvalue() / 2.,
+            std::numeric_limits<double>::max(), 0.);
 
     pcl::CropBox<pcl::PointXYZ> cropBox;
     cropBox.setInputCloud(cloud_);
@@ -98,16 +127,30 @@ void Task::downsampleCloud(void) {
 }
 
 void Task::transformCloud(void) {
-    auto tf = Eigen::Affine3d::Identity();
-    const Eigen::Vector3d rotation = _rotation.get();
-    const auto quaternion = Eigen::Quaterniond(
-            Eigen::AngleAxisd(rotation(2), Eigen::Vector3d::UnitZ()) *
-            Eigen::AngleAxisd(rotation(1), Eigen::Vector3d::UnitY()) *
-            Eigen::AngleAxisd(rotation(0), Eigen::Vector3d::UnitX()));
+    const double offsetYaw = _cloudYawOffset.value();
+    auto offsetTF = Eigen::Affine3d::Identity();
+    const auto offsetQuaternion = Eigen::Quaterniond(
+            Eigen::AngleAxisd(offsetYaw, Eigen::Vector3d::UnitZ()) *
+            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitX()));
 
-    tf.translation() = _translation.get();
-    tf.linear() = quaternion.toRotationMatrix();
-    pcl::transformPointCloud(*cloud_, *cloud_, tf);
+    offsetTF.translation() = Eigen::Vector3d(
+            - northingReference_ - robotPose_.position.y(),
+            eastingReference_ + robotPose_.position.x(),
+            elevationReference_ + robotPose_.position.z());
+    offsetTF.linear() = offsetQuaternion.toRotationMatrix();
+    pcl::transformPointCloud(*cloud_, *cloud_, offsetTF);
+
+    const double robotYaw = robotPose_.getYaw() - M_PI / 2.;
+    auto robotTF = Eigen::Affine3d::Identity();
+    const auto robotQuaternion = Eigen::Quaterniond(
+            Eigen::AngleAxisd(robotYaw, Eigen::Vector3d::UnitZ()) *
+            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitX()));
+
+    robotTF.translation() = Eigen::Vector3d::Zero();
+    robotTF.linear() = robotQuaternion.toRotationMatrix();
+    pcl::transformPointCloud(*cloud_, *cloud_, robotTF);
 }
 
 void Task::smoothCloud(void) {

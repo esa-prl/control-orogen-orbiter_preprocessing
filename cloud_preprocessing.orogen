@@ -13,26 +13,17 @@ task_context 'Task' do
     property('loadFilename', '/std/string').
         doc 'Path to filename (PCD or PLY) of the stored point cloud'
 
-    property('preprocessingEnabled', 'bool', true).
-        doc 'Preprocess the loaded cloud before outputting it'
+    property('saveFilename', '/std/string').
+        doc 'Path to filename (PCD or PLY) of the point cloud to be stored'
 
     property('savePreprocessedCloud', 'bool', false).
         doc 'Save the preprocessed cloud in a file'
 
-    property('saveFilename', '/std/string').
-        doc 'Path to filename (PCD or PLY) of the point cloud to be stored'
+    property('preprocessingEnabled', 'bool', true).
+        doc 'Preprocess the loaded cloud before outputting it'
 
-    property('voxelSize', 'double', 1.0).
-        doc 'Voxel dimension of the voxel grid to be applied'
-
-    property('rotation', '/base/Vector3d').
-        doc 'Rotation of the transformation to be applied'
-
-    property('translation', '/base/Vector3d').
-        doc 'Translation of the transformation to be applied'
-
-    property('box', '/base/Vector3d').
-        doc 'Size of the crop box to be applied'
+    property('smoothCloud', 'bool', true).
+        doc 'Smooth cloud using a statistical outlier removal (SOR) filter'
 
     property('sorMeanK', 'int', 50).
         doc 'Number of neighbors to analyze for each point in SOR filter'
@@ -40,10 +31,41 @@ task_context 'Task' do
     property('sorStdMultiplier', 'double', 1.0).
         doc 'Standard deviation multiplier for marking outliers in SOR filter'
 
+    property('cloudYawOffset', 'double', -Math::PI/2).
+        doc 'Yaw offset of input point cloud'
+
+    property('cloudEastingOffset', 'double').
+        doc 'UTM easting offset of input point cloud'
+
+    property('cloudNorthingOffset', 'double').
+        doc 'UTM northing offset of input point cloud'
+
+    property('cloudElevationOffset', 'double').
+        doc 'UTM elevation offset of input point cloud'
+
+    property('robotEastingOffset', 'double').
+        doc 'UTM easting offset of robot'
+
+    property('robotNorthingOffset', 'double').
+        doc 'UTM northing offset of robot'
+
+    property('robotElevationOffset', 'double').
+        doc 'UTM elevation offset of robot'
+
+    property('cropSize', 'double').
+        doc 'Size of the crop box to be applied'
+
+    property('voxelSize', 'double').
+        doc 'Voxel dimension of the voxel grid to be applied'
+
+    ####### Input Ports #######
+    input_port('robotPose', '/base/samples/RigidBodyState').
+        doc '6D pose of the robot, either directly from robot or from GPS'
+
     ####### Output Ports #######
     output_port('pointCloud', '/base/samples/Pointcloud').
         doc 'Point cloud that was loaded and preprocessed'
 
-    periodic 1
+    periodic 0.5
 end
 
