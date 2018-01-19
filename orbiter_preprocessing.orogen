@@ -58,6 +58,10 @@ task_context 'Task' do
     property('voxelSize', 'double').
         doc 'Voxel dimension of the voxel grid to be applied'
 
+    property('diffDistanceRatio', 'double', 0.5).
+        doc 'Ratio of the distance to voxel grid edge (cropSize / 2) ' +
+            'the robot must cover before a new cloud is processed'
+
     ####### Input Ports #######
     input_port('robotPose', '/base/samples/RigidBodyState').
         doc '6D pose of the robot, either directly from robot or from GPS'

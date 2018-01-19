@@ -13,9 +13,9 @@
 namespace orbiter_preprocessing {
 
 Task::Task(std::string const& name)
-        : TaskBase(name),
-          initialized_(false) {
+        : TaskBase(name) {
     cloud_.reset(new Cloud);
+    preprocessedCloud_.reset(new Cloud);
 }
 
 bool Task::configureHook(void) {
@@ -42,10 +42,10 @@ bool Task::startHook(void) {
 void Task::updateHook(void) {
     TaskBase::updateHook();
 
-    if (_robotPose.read(robotPose_) != RTT::NewData || !isReadyToPreprocess())
-        return;
-
-    if (_preprocessingEnabled.rvalue()) preprocessCloud();
+    if (_preprocessingEnabled.rvalue() &&
+            _robotPose.read(robotPose_) == RTT::NewData &&
+            isReadyToPreprocess())
+        preprocessCloud();
 
     writeCloud();
     if (_savePreprocessedCloud.rvalue()) saveCloud();
@@ -68,18 +68,28 @@ void Task::saveCloud(void) {
     const auto extension = filename.substr(filename.find_last_of(".") + 1);
 
     if (extension == "pcd")
-        pcl::io::savePCDFile<pcl::PointXYZ>(filename, *cloud_, true);
+        pcl::io::savePCDFile<pcl::PointXYZ>(filename, *preprocessedCloud_,true);
     else if (extension == "ply")
-        pcl::io::savePLYFile<pcl::PointXYZ>(filename, *cloud_, true);
+        pcl::io::savePLYFile<pcl::PointXYZ>(filename, *preprocessedCloud_,true);
     else
         std::cout << "Failed to save cloud. Unkown file format" << std::endl;
 }
 
 bool Task::isReadyToPreprocess(void) {
-    if (initialized_) return false;
+    if (!lastPose_.hasValidPosition()) {
+        lastPose_ = robotPose_;
+        return true;
+    }
 
-    initialized_ = true;
-    return true;
+    const double diffX = robotPose_.position.x() - lastPose_.position.x();
+    const double diffY = robotPose_.position.y() - lastPose_.position.y();
+    const double gridEdgeDistance = _cropSize.value() / 2.;
+    const double diffThreshold = _diffDistanceRatio.value() * gridEdgeDistance;
+
+    if (std::abs(diffX) > diffThreshold || std::abs(diffY) > diffThreshold)
+        return true;
+    else
+        return false;
 }
 
 void Task::preprocessCloud(void) {
@@ -103,7 +113,7 @@ void Task::transformCloud(void) {
             eastingReference_ + robotPose_.position.x(),
             elevationReference_ + robotPose_.position.z());
     offsetTF.linear() = offsetQuaternion.toRotationMatrix();
-    pcl::transformPointCloud(*cloud_, *cloud_, offsetTF);
+    pcl::transformPointCloud(*cloud_, *preprocessedCloud_, offsetTF);
 
     const double robotYaw = robotPose_.getYaw() - M_PI / 2.;
     auto robotTF = Eigen::Affine3d::Identity();
@@ -114,16 +124,16 @@ void Task::transformCloud(void) {
 
     robotTF.translation() = Eigen::Vector3d::Zero();
     robotTF.linear() = robotQuaternion.toRotationMatrix();
-    pcl::transformPointCloud(*cloud_, *cloud_, robotTF);
+    pcl::transformPointCloud(*preprocessedCloud_, *preprocessedCloud_, robotTF);
 }
 
 void Task::downsampleCloud(void) {
     const double voxelSize = _voxelSize.value();
 
     pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
-    voxelGrid.setInputCloud(cloud_);
+    voxelGrid.setInputCloud(preprocessedCloud_);
     voxelGrid.setLeafSize(voxelSize, voxelSize, voxelSize);
-    voxelGrid.filter(*cloud_);
+    voxelGrid.filter(*preprocessedCloud_);
 }
 
 void Task::cropCloud(void) {
@@ -137,27 +147,27 @@ void Task::cropCloud(void) {
             std::numeric_limits<double>::max(), 0.);
 
     pcl::CropBox<pcl::PointXYZ> cropBox;
-    cropBox.setInputCloud(cloud_);
+    cropBox.setInputCloud(preprocessedCloud_);
     cropBox.setMin(minCutoffPoint);
     cropBox.setMax(maxCutoffPoint);
-    cropBox.filter(*cloud_);
+    cropBox.filter(*preprocessedCloud_);
 }
 
 void Task::smoothCloud(void) {
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud_);
+    sor.setInputCloud(preprocessedCloud_);
     sor.setMeanK(_sorMeanK.rvalue());
     sor.setStddevMulThresh(_sorStdMultiplier.rvalue());
-    sor.filter(*cloud_);
+    sor.filter(*preprocessedCloud_);
 }
 
 void Task::writeCloud(void) {
     BaseCloud baseCloud;
     baseCloud.points.clear();
-    baseCloud.points.reserve(cloud_->size());
+    baseCloud.points.reserve(preprocessedCloud_->size());
     baseCloud.time = base::Time::now();
 
-    for (const auto& point : cloud_->points)
+    for (const auto& point : preprocessedCloud_->points)
         baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
 
     _pointCloud.write(baseCloud);

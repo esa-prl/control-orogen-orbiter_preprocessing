@@ -40,11 +40,11 @@ class Task : public TaskBase {
     void writeCloud(void);
 
   protected:
-    bool initialized_;
-
     base::samples::RigidBodyState robotPose_;
+    base::samples::RigidBodyState lastPose_;
 
     Cloud::Ptr cloud_;
+    Cloud::Ptr preprocessedCloud_;
 
     double eastingReference_;
     double northingReference_;
