@@ -37,7 +37,7 @@ class Task : public TaskBase {
 
     void smoothCloud(void);
 
-    void writeCloud(void);
+    void writeCloud(const Cloud::ConstPtr& cloud);
 
   protected:
     base::samples::RigidBodyState robotPose_;

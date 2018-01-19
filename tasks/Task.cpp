@@ -43,13 +43,17 @@ bool Task::startHook(void) {
 void Task::updateHook(void) {
     TaskBase::updateHook();
 
-    if (_preprocessingEnabled.rvalue() &&
-            _robotPose.read(robotPose_) == RTT::NewData &&
-            isReadyToPreprocess())
-        preprocessCloud();
+    if (_preprocessingEnabled.rvalue()) {
+        if (_robotPose.read(robotPose_) != RTT::NewData ||
+                !isReadyToPreprocess())
+            return;
 
-    writeCloud();
-    if (_savePreprocessedCloud.rvalue()) saveCloud();
+        preprocessCloud();
+        writeCloud(preprocessedCloud_);
+        if (_savePreprocessedCloud.rvalue()) saveCloud();
+    } else {
+        writeCloud(cloud_);
+    }
 }
 
 void Task::loadCloud(void) {
@@ -162,13 +166,13 @@ void Task::smoothCloud(void) {
     sor.filter(*preprocessedCloud_);
 }
 
-void Task::writeCloud(void) {
+void Task::writeCloud(const Cloud::ConstPtr& cloud) {
     BaseCloud baseCloud;
     baseCloud.points.clear();
-    baseCloud.points.reserve(preprocessedCloud_->size());
+    baseCloud.points.reserve(cloud->size());
     baseCloud.time = base::Time::now();
 
-    for (const auto& point : preprocessedCloud_->points)
+    for (const auto& point : cloud->points)
         baseCloud.points.push_back(base::Point(point.x, point.y, point.z));
 
     _pointCloud.write(baseCloud);
