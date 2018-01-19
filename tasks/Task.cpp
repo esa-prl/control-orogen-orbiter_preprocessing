@@ -83,47 +83,11 @@ bool Task::isReadyToPreprocess(void) {
 }
 
 void Task::preprocessCloud(void) {
-    cropCloud();
-    downsampleCloud();
     transformCloud();
+    downsampleCloud();
+    cropCloud();
 
     if (_smoothCloud.rvalue()) smoothCloud();
-}
-
-void Task::cropCloud(void) {
-    using Vector = Eigen::Vector3d;
-
-    const auto quaternion = Eigen::Quaterniond(
-            Eigen::AngleAxisd(_cloudYawOffset.rvalue(), Vector::UnitZ()) *
-            Eigen::AngleAxisd(0., Vector::UnitY()) *
-            Eigen::AngleAxisd(0., Vector::UnitX()));
-    const Vector translation(- northingReference_ - robotPose_.position.y(),
-            eastingReference_ + robotPose_.position.x(), 0.);
-    const Vector center = quaternion.toRotationMatrix() * translation;
-
-    const Eigen::Vector4f minCutoffPoint(
-            center(0) - _cropSize.rvalue() / 2.,
-            center(1) - _cropSize.rvalue() / 2.,
-            -std::numeric_limits<double>::max(), 0.);
-    const Eigen::Vector4f maxCutoffPoint(
-            center(0) + _cropSize.rvalue() / 2.,
-            center(1) + _cropSize.rvalue() / 2.,
-            std::numeric_limits<double>::max(), 0.);
-
-    pcl::CropBox<pcl::PointXYZ> cropBox;
-    cropBox.setInputCloud(cloud_);
-    cropBox.setMin(minCutoffPoint);
-    cropBox.setMax(maxCutoffPoint);
-    cropBox.filter(*cloud_);
-}
-
-void Task::downsampleCloud(void) {
-    const double voxelSize = _voxelSize.value();
-
-    pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
-    voxelGrid.setInputCloud(cloud_);
-    voxelGrid.setLeafSize(voxelSize, voxelSize, voxelSize);
-    voxelGrid.filter(*cloud_);
 }
 
 void Task::transformCloud(void) {
@@ -151,6 +115,32 @@ void Task::transformCloud(void) {
     robotTF.translation() = Eigen::Vector3d::Zero();
     robotTF.linear() = robotQuaternion.toRotationMatrix();
     pcl::transformPointCloud(*cloud_, *cloud_, robotTF);
+}
+
+void Task::downsampleCloud(void) {
+    const double voxelSize = _voxelSize.value();
+
+    pcl::VoxelGrid<pcl::PointXYZ> voxelGrid;
+    voxelGrid.setInputCloud(cloud_);
+    voxelGrid.setLeafSize(voxelSize, voxelSize, voxelSize);
+    voxelGrid.filter(*cloud_);
+}
+
+void Task::cropCloud(void) {
+    const Eigen::Vector4f minCutoffPoint(
+            - _cropSize.rvalue() / 2.,
+            - _cropSize.rvalue() / 2.,
+            -std::numeric_limits<double>::max(), 0.);
+    const Eigen::Vector4f maxCutoffPoint(
+            _cropSize.rvalue() / 2.,
+            _cropSize.rvalue() / 2.,
+            std::numeric_limits<double>::max(), 0.);
+
+    pcl::CropBox<pcl::PointXYZ> cropBox;
+    cropBox.setInputCloud(cloud_);
+    cropBox.setMin(minCutoffPoint);
+    cropBox.setMax(maxCutoffPoint);
+    cropBox.filter(*cloud_);
 }
 
 void Task::smoothCloud(void) {
