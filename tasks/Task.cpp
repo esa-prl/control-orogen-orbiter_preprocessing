@@ -34,6 +34,7 @@ bool Task::configureHook(void) {
 bool Task::startHook(void) {
     if (!TaskBase::startHook()) return false;
 
+    std::cout << "[Orbiter Preprocessing] Loading orbiter map..." << std::endl;
     loadCloud();
 
     return true;
