@@ -91,10 +91,12 @@ bool Task::isReadyToPreprocess(void) {
     const double gridEdgeDistance = _cropSize.value() / 2.;
     const double diffThreshold = _diffDistanceRatio.value() * gridEdgeDistance;
 
-    if (std::abs(diffX) > diffThreshold || std::abs(diffY) > diffThreshold)
+    if (std::abs(diffX) > diffThreshold || std::abs(diffY) > diffThreshold) {
+        lastPose_ = robotPose_;
         return true;
-    else
+    } else {
         return false;
+    }
 }
 
 void Task::preprocessCloud(void) {
