@@ -1,4 +1,4 @@
-PROJECT(cloud_preprocessing)
+PROJECT(orbiter_preprocessing)
 cmake_minimum_required(VERSION 2.6)
 
 find_package(Rock)
@@ -7,5 +7,5 @@ if (ROCK_USE_CXX11)
 endif()
 
 SET (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.orogen/config")
-INCLUDE(cloud_preprocessingBase)
+INCLUDE(orbiter_preprocessingBase)
 

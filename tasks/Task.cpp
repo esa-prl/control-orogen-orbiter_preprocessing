@@ -10,7 +10,7 @@
 #include <string>
 #include <cmath>
 
-namespace cloud_preprocessing {
+namespace orbiter_preprocessing {
 
 Task::Task(std::string const& name)
         : TaskBase(name),
@@ -173,5 +173,5 @@ void Task::writeCloud(void) {
     _pointCloud.write(baseCloud);
 }
 
-}  // namespace cloud_preprocessing
+}  // namespace orbiter_preprocessing
 

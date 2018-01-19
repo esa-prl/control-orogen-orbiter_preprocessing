@@ -1,18 +1,18 @@
 #pragma once
 
-#include "cloud_preprocessing/TaskBase.hpp"
+#include "orbiter_preprocessing/TaskBase.hpp"
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
-namespace cloud_preprocessing {
+namespace orbiter_preprocessing {
 
 using Cloud = pcl::PointCloud<pcl::PointXYZ>;
 using BaseCloud = base::samples::Pointcloud;
 
 class Task : public TaskBase {
   public:
-    explicit Task(std::string const& name = "cloud_preprocessing::Task");
+    explicit Task(std::string const& name = "orbiter_preprocessing::Task");
 
   protected:
     bool configureHook(void) override;
@@ -51,5 +51,5 @@ class Task : public TaskBase {
     double elevationReference_;
 };
 
-}  // namespace cloud_preprocessing
+}  // namespace orbiter_preprocessing
 
