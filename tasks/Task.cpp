@@ -114,14 +114,19 @@ void Task::transformCloud(void) {
             Eigen::AngleAxisd(offsetYaw, Eigen::Vector3d::UnitZ()) *
             Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()) *
             Eigen::AngleAxisd(0., Eigen::Vector3d::UnitX()));
-
+/*
     offsetTF.translation() = Eigen::Vector3d(
             - northingReference_ - robotPose_.position.y(),
             eastingReference_ + robotPose_.position.x(),
             elevationReference_ + robotPose_.position.z());
+*/
+    offsetTF.translation() = Eigen::Vector3d(
+            -(eastingReference_ + robotPose_.position.x()),
+            -(northingReference_ + robotPose_.position.y()),
+            elevationReference_ + robotPose_.position.z());
     offsetTF.linear() = offsetQuaternion.toRotationMatrix();
     pcl::transformPointCloud(*cloud_, *preprocessedCloud_, offsetTF);
-
+/*
     const double robotYaw = robotPose_.getYaw() - M_PI / 2.;
     auto robotTF = Eigen::Affine3d::Identity();
     const auto robotQuaternion = Eigen::Quaterniond(
@@ -132,6 +137,7 @@ void Task::transformCloud(void) {
     robotTF.translation() = Eigen::Vector3d::Zero();
     robotTF.linear() = robotQuaternion.toRotationMatrix();
     pcl::transformPointCloud(*preprocessedCloud_, *preprocessedCloud_, robotTF);
+*/
 }
 
 void Task::downsampleCloud(void) {

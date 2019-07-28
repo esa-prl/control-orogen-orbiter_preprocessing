@@ -31,7 +31,8 @@ task_context 'Task' do
     property('sorStdMultiplier', 'double', 1.0).
         doc 'Standard deviation multiplier for marking outliers in SOR filter'
 
-    property('cloudYawOffset', 'double', -Math::PI/2).
+    #property('cloudYawOffset', 'double', -Math::PI/2).
+    property('cloudYawOffset', 'double', 0.0).
         doc 'Yaw offset of input point cloud'
 
     property('cloudEastingOffset', 'double').
