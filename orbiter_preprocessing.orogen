@@ -1,8 +1,8 @@
 name 'orbiter_preprocessing'
 
-using_library 'pcl_common-1.7'
-using_library 'pcl_filters-1.7'
-using_library 'pcl_io-1.7'
+using_library 'pcl_common-1.8'
+using_library 'pcl_filters-1.8'
+using_library 'pcl_io-1.8'
 
 import_types_from 'base'
 
