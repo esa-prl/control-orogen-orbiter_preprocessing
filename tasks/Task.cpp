@@ -122,16 +122,18 @@ void Task::transformCloud(void) {
     offsetTF.linear() = offsetQuaternion.toRotationMatrix();
     pcl::transformPointCloud(*cloud_, *preprocessedCloud_, offsetTF);
 
-    const double robotYaw = robotPose_.getYaw() - M_PI / 2.;
-    auto robotTF = Eigen::Affine3d::Identity();
-    const auto robotQuaternion = Eigen::Quaterniond(
-            Eigen::AngleAxisd(robotYaw, Eigen::Vector3d::UnitZ()) *
-            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()) *
-            Eigen::AngleAxisd(0., Eigen::Vector3d::UnitX()));
+    if (_rotateCloudWithRobotHeading.rvalue()) {
+        const double robotYaw = robotPose_.getYaw() - M_PI / 2.;
+        auto robotTF = Eigen::Affine3d::Identity();
+        const auto robotQuaternion = Eigen::Quaterniond(
+                Eigen::AngleAxisd(robotYaw, Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxisd(0., Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxisd(0., Eigen::Vector3d::UnitX()));
 
-    robotTF.translation() = Eigen::Vector3d::Zero();
-    robotTF.linear() = robotQuaternion.toRotationMatrix();
-    pcl::transformPointCloud(*preprocessedCloud_, *preprocessedCloud_, robotTF);
+        robotTF.translation() = Eigen::Vector3d::Zero();
+        robotTF.linear() = robotQuaternion.toRotationMatrix();
+        pcl::transformPointCloud(*preprocessedCloud_, *preprocessedCloud_, robotTF);
+    }
 }
 
 void Task::downsampleCloud(void) {
