@@ -63,6 +63,9 @@ task_context 'Task' do
         doc 'Ratio of the distance to voxel grid edge (cropSize / 2) ' +
             'the robot must cover before a new cloud is processed'
 
+    property('gpsRefFrame', 'bool', false).
+        doc 'Use the GPS reference frame'
+
     ####### Input Ports #######
     input_port('robotPose', '/base/samples/RigidBodyState').
         doc '6D pose of the robot, either directly from robot or from GPS'
